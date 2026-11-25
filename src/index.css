@@ -11,10 +11,14 @@
   color-scheme: dark;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100dvh;
+  overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
 }
 
 .safe-top {
