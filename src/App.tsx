@@ -368,7 +368,7 @@ export default function App() {
       {/* Main Content Area (Mobile column on small screens, full wide dashboard on desktop) */}
       <div className="flex-1 flex flex-col w-full max-w-md md:max-w-6xl mx-auto relative pb-24 md:pb-10">
         {/* Top Header */}
-        <header className="safe-top sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md px-4 md:px-8 pt-3 md:pt-6 pb-2 md:pb-4 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
+        <header className="safe-top sticky top-0 z-20 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md px-4 md:px-8 pb-2.5 md:pb-4 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             {activeTab === 'home' && 'Inicio'}
             {activeTab === 'analytics' && 'Analíticas'}
