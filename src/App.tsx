@@ -1900,6 +1900,28 @@ function SettingsTab({
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
+
+      {/* About & Credits */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm space-y-2 text-xs text-gray-500 dark:text-zinc-400">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Acerca de
+        </h3>
+        <p>
+          <strong>Inpenso Web (PWA)</strong> es una adaptación multiplataforma para navegador móvil basada en el proyecto original para iOS{' '}
+          <a
+            href="https://github.com/VintusS/Inpenso"
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-600 dark:text-blue-400 font-semibold underline"
+          >
+            VintusS/Inpenso
+          </a>
+          .
+        </p>
+        <p>
+          Incluye gestión de cuentas de crédito y débito, ajuste manual de saldo disponible, cálculo de fechas de corte y pago, soporte para MXN y funcionamiento offline como PWA.
+        </p>
+      </div>
     </div>
   );
 }
