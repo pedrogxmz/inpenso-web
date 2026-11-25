@@ -18,11 +18,17 @@ body {
 }
 
 .safe-top {
-  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem) !important;
+}
+
+@media (min-width: 768px) {
+  .safe-top {
+    padding-top: 1.5rem !important;
+  }
 }
 
 .safe-bottom {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.35rem) !important;
 }
 
 .no-scrollbar::-webkit-scrollbar {
