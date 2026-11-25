@@ -1,8 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
 }
 
 body {

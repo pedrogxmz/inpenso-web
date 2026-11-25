@@ -179,9 +179,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
     const root = document.documentElement;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-    root.classList.toggle('dark', isDark);
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const isDark = theme === 'dark' || (theme === 'system' && media.matches);
+      root.classList.toggle('dark', isDark);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', isDark ? '#000000' : '#F2F2F7');
+      }
+    };
+
+    applyTheme();
+    media.addEventListener('change', applyTheme);
+    return () => media.removeEventListener('change', applyTheme);
   }, [theme]);
 
   const fmt = (value: number) => {
