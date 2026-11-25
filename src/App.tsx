@@ -47,6 +47,7 @@ import {
   getDaysUntilPayment,
   getNextCutDate,
   getNextPaymentDate,
+  getSavingsSummary,
   ThemeMode,
   TransactionType,
 } from './types';
@@ -1674,6 +1675,8 @@ function AccountsTab({
   onNewAccount: () => void;
   onEditAccount: (a: Account) => void;
 }) {
+  const [expandedSavingsId, setExpandedSavingsId] = useState<string | null>(null);
+
   if (accounts.length === 0) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 text-center space-y-3 shadow-sm mt-4">
@@ -1682,7 +1685,7 @@ function AccountsTab({
         </div>
         <h3 className="text-base font-bold">Aún no hay cuentas</h3>
         <p className="text-xs text-gray-500 dark:text-zinc-400 max-w-xs mx-auto">
-          Agrega tu primera cuenta para ver saldos libres, fechas de corte y fechas de pago.
+          Agrega tus tarjetas de crédito, cuentas de débito o cuentas de ahorro/inversión con rendimiento diario.
         </p>
         <button
           onClick={onNewAccount}
@@ -1698,14 +1701,29 @@ function AccountsTab({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       {accounts.map((account) => {
         const isCredit = account.type === 'credit';
+        const isSavings = account.type === 'savings';
         const consumed = getAccountConsumed(account, expenses);
         const available = getAccountAvailableBalance(account, expenses);
         const debitBalance = getAccountCurrentBalance(account, expenses);
+        const savingsSummary = isSavings ? getSavingsSummary(account, expenses) : null;
         const days = getDaysUntilPayment(account);
         const pct =
           account.creditLimit > 0
             ? Math.min(100, Math.round((consumed / account.creditLimit) * 100))
             : 0;
+        const isExpanded = expandedSavingsId === account.id;
+
+        const badgeColor = isCredit
+          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+          : isSavings
+          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400'
+          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400';
+
+        const typeLabel = isCredit
+          ? 'Crédito'
+          : isSavings
+          ? `Ahorro / Inversión • ${account.annualRate || 0}% anual`
+          : 'Débito';
 
         return (
           <div
@@ -1716,15 +1734,11 @@ function AccountsTab({
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                    isCredit
-                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600'
-                      : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
-                  }`}
-                >
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${badgeColor}`}>
                   {isCredit ? (
                     <CreditCard className="w-5 h-5" />
+                  ) : isSavings ? (
+                    <TrendingUp className="w-5 h-5" />
                   ) : (
                     <Banknote className="w-5 h-5" />
                   )}
@@ -1732,34 +1746,144 @@ function AccountsTab({
                 <div>
                   <h3 className="text-base font-bold">{account.name}</h3>
                   <p className="text-xs text-gray-500">
-                    {isCredit ? 'Crédito' : 'Débito'} • Toca para ajustar
+                    {typeLabel} • Toca para editar
                   </p>
                 </div>
               </div>
-              <span
-                className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                  isCredit
-                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600'
-                    : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
-                }`}
-              >
-                {isCredit ? 'Crédito' : 'Débito'}
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${badgeColor}`}>
+                {isCredit ? 'Crédito' : isSavings ? `${account.annualRate || 0}% GAT` : 'Débito'}
               </span>
             </div>
 
             {/* Main Balance */}
             <div>
               <p className="text-xs text-gray-500 dark:text-zinc-400">
-                {isCredit ? 'Saldo disponible' : 'Saldo actual'}
+                {isCredit
+                  ? 'Saldo disponible'
+                  : isSavings
+                  ? 'Saldo total (Capital + Rendimientos)'
+                  : 'Saldo actual'}
               </p>
               <p
                 className={`text-3xl font-bold tracking-tight mt-0.5 ${
                   isCredit && available < 0 ? 'text-red-500' : ''
                 }`}
               >
-                {fmt(isCredit ? available : debitBalance)}
+                {fmt(
+                  isCredit
+                    ? available
+                    : isSavings && savingsSummary
+                    ? savingsSummary.totalBalance
+                    : debitBalance
+                )}
               </p>
             </div>
+
+            {/* Savings / Investment Yield Breakdown */}
+            {isSavings && savingsSummary && (
+              <div className="space-y-3 pt-1">
+                <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 text-xs">
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">Capital</p>
+                    <p className="font-bold mt-0.5">{fmt(savingsSummary.principal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">Hoy ganas</p>
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      +{fmt(savingsSummary.todayYield)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">
+                      Ganado ({savingsSummary.daysElapsed}d)
+                    </p>
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      +{fmt(savingsSummary.accumulatedYield)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800/70 flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-zinc-400">30 días:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      +{fmt(savingsSummary.projectedMonthlyYield)}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800/70 flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-zinc-400">1 año:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      +{fmt(savingsSummary.projectedYearlyYield)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle Day-by-Day Yield Table */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedSavingsId(isExpanded ? null : account.id);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center justify-between hover:bg-gray-200/70 dark:hover:bg-zinc-700/70 transition cursor-pointer"
+                >
+                  <span>
+                    {isExpanded
+                      ? 'Ocultar rendimientos día a día'
+                      : 'Ver rendimientos día a día'}
+                  </span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </button>
+
+                {isExpanded && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden text-xs max-h-64 overflow-y-auto"
+                  >
+                    <div className="grid grid-cols-3 bg-gray-100 dark:bg-zinc-800 px-3 py-2 font-semibold text-[11px] text-gray-500 dark:text-zinc-400 sticky top-0">
+                      <span>Día</span>
+                      <span className="text-right">Rendimiento</span>
+                      <span className="text-right">Saldo cierre</span>
+                    </div>
+                    <div className="divide-y divide-gray-100 dark:divide-zinc-800/80">
+                      {[...savingsSummary.dailyEntries]
+                        .slice(-21)
+                        .reverse()
+                        .map((entry) => (
+                          <div
+                            key={entry.dateKey}
+                            className={`grid grid-cols-3 px-3 py-2 items-center ${
+                              entry.isProjected
+                                ? 'bg-purple-50/40 dark:bg-purple-950/20 text-gray-500 dark:text-zinc-400'
+                                : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium">
+                                {entry.date.toLocaleDateString('es-MX', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                })}
+                              </span>
+                              {entry.isProjected && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 font-semibold">
+                                  Proy.
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                              +{fmt(entry.dailyYield)}
+                            </span>
+                            <span className="text-right font-semibold">
+                              {fmt(entry.endingBalance)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Credit Progress & Cut/Payment Dates */}
             {isCredit && (
@@ -2349,7 +2473,17 @@ function AccountModal({
     initialAccount && existingConsumed > 0 ? String(existingConsumed) : ''
   );
   const [debitBalance, setDebitBalance] = useState(
-    initialAccount && initialAccount.type === 'debit' ? String(initialAccount.initialBalance) : ''
+    initialAccount && (initialAccount.type === 'debit' || initialAccount.type === 'savings')
+      ? String(initialAccount.initialBalance)
+      : ''
+  );
+  const [annualRate, setAnnualRate] = useState(
+    initialAccount && initialAccount.annualRate ? String(initialAccount.annualRate) : '12.5'
+  );
+  const [investmentStartDate, setInvestmentStartDate] = useState(
+    initialAccount?.investmentStartDate
+      ? initialAccount.investmentStartDate.slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
   );
   const [cutDay, setCutDay] = useState(initialAccount?.cutDay || 1);
   const [graceDays, setGraceDays] = useState(initialAccount?.graceDays || 20);
@@ -2368,11 +2502,15 @@ function AccountModal({
     name: name || 'Preview',
     type,
     creditLimit: limitNum,
-    initialBalance: 0,
+    initialBalance: Number(debitBalance) || 0,
     cutDay,
     graceDays,
     createdAt: new Date().toISOString(),
+    annualRate: Number(annualRate) || 0,
+    investmentStartDate: new Date(investmentStartDate + 'T00:00:00').toISOString(),
   };
+
+  const previewSavings = type === 'savings' ? getSavingsSummary(previewAcc, expenses) : null;
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -2389,6 +2527,11 @@ function AccountModal({
       cutDay,
       graceDays,
       createdAt: initialAccount?.createdAt || new Date().toISOString(),
+      annualRate: type === 'savings' ? Math.max(0, Number(annualRate) || 0) : undefined,
+      investmentStartDate:
+        type === 'savings'
+          ? new Date(investmentStartDate + 'T00:00:00').toISOString()
+          : undefined,
     };
     const cycleTx =
       type === 'credit' ? getCycleTransactionsConsumed(tempAcc, expenses) : 0;
@@ -2418,14 +2561,14 @@ function AccountModal({
             <label className="text-xs text-gray-500">Nombre</label>
             <input
               type="text"
-              placeholder="Nombre de la cuenta (ej. BBVA, Nu, Amex)"
+              placeholder="Nombre (ej. Cajita Nu, Cetes, BBVA)"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full mt-1 bg-gray-100 dark:bg-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:outline-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl text-xs font-semibold">
+          <div className="grid grid-cols-3 bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setType('credit')}
               className={`py-1.5 rounded-lg ${
@@ -2441,6 +2584,14 @@ function AccountModal({
               }`}
             >
               Débito
+            </button>
+            <button
+              onClick={() => setType('savings')}
+              className={`py-1.5 rounded-lg ${
+                type === 'savings' ? 'bg-white dark:bg-zinc-900 shadow-sm' : 'text-gray-500'
+              }`}
+            >
+              Ahorro / Inv.
             </button>
           </div>
         </div>
@@ -2585,6 +2736,81 @@ function AccountModal({
               </div>
             </div>
           </>
+        ) : type === 'savings' ? (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 space-y-3.5 shadow-sm">
+            <div>
+              <label className="text-xs text-gray-500">
+                Capital / Saldo inicial invertido ({currency})
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={debitBalance}
+                onChange={(e) => setDebitBalance(e.target.value)}
+                className="w-full mt-1 bg-gray-100 dark:bg-zinc-800 rounded-xl px-3.5 py-2.5 text-lg font-bold focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500">Tasa fija anual (%)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="12.5"
+                  value={annualRate}
+                  onChange={(e) => setAnnualRate(e.target.value)}
+                  className="w-full mt-1 bg-gray-100 dark:bg-zinc-800 rounded-xl px-3.5 py-2.5 text-base font-bold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500">Inicio de inversión</label>
+                <input
+                  type="date"
+                  value={investmentStartDate}
+                  onChange={(e) => setInvestmentStartDate(e.target.value)}
+                  className="w-full mt-1 bg-gray-100 dark:bg-zinc-800 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {previewSavings && (
+              <div className="bg-purple-50/60 dark:bg-purple-950/30 rounded-xl p-3 text-xs space-y-1.5">
+                <p className="font-semibold text-purple-600 dark:text-purple-400">
+                  Vista previa de rendimientos (interés compuesto diario)
+                </p>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Rendimiento diario (hoy):</span>
+                  <span className="font-bold text-emerald-600">
+                    +{fmt(previewSavings.todayYield)} / día
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Acumulado ({previewSavings.daysElapsed} días):
+                  </span>
+                  <span className="font-bold text-emerald-600">
+                    +{fmt(previewSavings.accumulatedYield)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Proyección a 30 días:</span>
+                  <span className="font-bold text-emerald-600">
+                    +{fmt(previewSavings.projectedMonthlyYield)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Proyección a 1 año (365d):</span>
+                  <span className="font-bold text-emerald-600">
+                    +{fmt(previewSavings.projectedYearlyYield)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 space-y-2 shadow-sm">
             <label className="text-xs text-gray-500">Saldo inicial ({currency})</label>

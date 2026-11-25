@@ -1,5 +1,5 @@
 export type TransactionType = 'expense' | 'income';
-export type AccountType = 'credit' | 'debit';
+export type AccountType = 'credit' | 'debit' | 'savings';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type Language = 'es' | 'en';
 
@@ -24,6 +24,32 @@ export interface Account {
   cutDay: number;
   graceDays: number;
   createdAt: string;
+  /** Fixed annual yield percentage for savings/investment accounts (e.g. 12.5 for 12.5% APR). */
+  annualRate?: number;
+  /** ISO date string when the savings/investment account started accruing daily yield. */
+  investmentStartDate?: string;
+}
+
+export interface DailyYieldEntry {
+  dateKey: string;
+  date: Date;
+  startingBalance: number;
+  netTransactions: number;
+  dailyYield: number;
+  endingBalance: number;
+  cumulativeYield: number;
+  isProjected: boolean;
+}
+
+export interface SavingsSummary {
+  principal: number;
+  accumulatedYield: number;
+  totalBalance: number;
+  todayYield: number;
+  projectedMonthlyYield: number;
+  projectedYearlyYield: number;
+  daysElapsed: number;
+  dailyEntries: DailyYieldEntry[];
 }
 
 export interface CategoryDef {
@@ -144,9 +170,122 @@ export function getAccountAvailableBalance(
 }
 
 export function getAccountCurrentBalance(account: Account, expenses: Expense[]): number {
-  if (account.type !== 'debit') return 0;
+  if (account.type === 'credit') return 0;
+  if (account.type === 'savings') {
+    return getSavingsSummary(account, expenses).totalBalance;
+  }
   const mine = expenses.filter((e) => e.accountID === account.id);
   const income = mine.filter((e) => e.type === 'income').reduce((s, e) => s + e.price, 0);
   const spent = mine.filter((e) => e.type === 'expense').reduce((s, e) => s + e.price, 0);
   return account.initialBalance + income - spent;
+}
+
+function toDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+}
+
+/**
+ * Calculates day-by-day compound yield for a savings/investment account
+ * from its start date through today (plus a 7-day forward projection).
+ */
+export function getSavingsSummary(
+  account: Account,
+  expenses: Expense[],
+  now: Date = new Date()
+): SavingsSummary {
+  const annualRate = Math.max(0, account.annualRate || 0);
+  const dailyRate = annualRate / 100 / 365;
+
+  const rawStart = account.investmentStartDate
+    ? new Date(account.investmentStartDate)
+    : new Date(account.createdAt || now);
+  const startDay = new Date(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate());
+  const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Cap lookback to 365 days max for fast rendering
+  const minStart = new Date(todayDay);
+  minStart.setDate(minStart.getDate() - 365);
+  const effectiveStart = startDay < minStart ? minStart : startDay > todayDay ? todayDay : startDay;
+
+  // Map net transactions by YYYY-MM-DD for this account
+  const txByDay: Record<string, number> = {};
+  let txBeforeStart = 0;
+  for (const e of expenses) {
+    if (e.accountID !== account.id) continue;
+    const ed = new Date(e.date);
+    const edDay = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
+    const delta = e.type === 'income' ? e.price : -e.price;
+    if (edDay < effectiveStart) {
+      txBeforeStart += delta;
+    } else {
+      const key = toDateKey(edDay);
+      txByDay[key] = (txByDay[key] || 0) + delta;
+    }
+  }
+
+  let runningBalance = Math.max(0, account.initialBalance + txBeforeStart);
+  let principal = runningBalance;
+  let cumulativeYield = 0;
+  const entries: DailyYieldEntry[] = [];
+
+  const totalDaysElapsed = Math.max(
+    0,
+    Math.round((todayDay.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24))
+  );
+
+  // Simulate each day from effectiveStart up to today + 7 projected days
+  const futureDays = 7;
+  for (let i = 0; i <= totalDaysElapsed + futureDays; i++) {
+    const curDate = new Date(effectiveStart);
+    curDate.setDate(curDate.getDate() + i);
+    const key = toDateKey(curDate);
+    const isProjected = i > totalDaysElapsed;
+    const netTx = isProjected ? 0 : txByDay[key] || 0;
+
+    const startBal = Math.max(0, runningBalance + netTx);
+    if (!isProjected) {
+      principal = Math.max(0, principal + netTx);
+    }
+
+    // Day 0 is the deposit day; if startDay == todayDay, show 1 day's daily yield rate preview
+    const yieldForDay = startBal * dailyRate;
+    const endBal = startBal + yieldForDay;
+    cumulativeYield += yieldForDay;
+    runningBalance = endBal;
+
+    entries.push({
+      dateKey: key,
+      date: curDate,
+      startingBalance: startBal,
+      netTransactions: netTx,
+      dailyYield: yieldForDay,
+      endingBalance: endBal,
+      cumulativeYield,
+      isProjected,
+    });
+  }
+
+  const todayEntry = entries[totalDaysElapsed] || entries[0];
+  const currentTotalBalance = todayEntry ? todayEntry.endingBalance : principal;
+  const currentAccumulatedYield = todayEntry ? todayEntry.cumulativeYield : 0;
+  const todayYield = currentTotalBalance * dailyRate;
+
+  // Compound projections from currentTotalBalance
+  const projectedMonthlyYield =
+    dailyRate > 0 ? currentTotalBalance * (Math.pow(1 + dailyRate, 30) - 1) : 0;
+  const projectedYearlyYield =
+    dailyRate > 0 ? currentTotalBalance * (Math.pow(1 + dailyRate, 365) - 1) : 0;
+
+  return {
+    principal,
+    accumulatedYield: currentAccumulatedYield,
+    totalBalance: currentTotalBalance,
+    todayYield,
+    projectedMonthlyYield,
+    projectedYearlyYield,
+    daysElapsed: totalDaysElapsed + 1,
+    dailyEntries: entries,
+  };
 }
