@@ -412,8 +412,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Assistant Button on Home */}
-      {activeTab === 'home' && (
+      {/* Floating Assistant Button on Home (only shown inside native .ipa with Apple Intelligence bridge) */}
+      {activeTab === 'home' && hasNativeAppleIntelligenceBridge() && (
         <button
           onClick={() => setAssistantOpen(true)}
           aria-label="Asistente"
