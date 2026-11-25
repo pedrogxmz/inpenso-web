@@ -295,9 +295,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-gray-100 flex flex-col md:flex-row">
+    <div className="h-dvh overflow-hidden bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-gray-100 flex flex-col md:flex-row">
       {/* Desktop Sidebar (visible on md and larger screens) */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col justify-between bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-r border-gray-200/80 dark:border-zinc-800 p-5 sticky top-0 h-screen">
+      <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col justify-between bg-white dark:bg-zinc-900 border-r border-gray-200/80 dark:border-zinc-800 p-5 h-dvh">
         <div className="space-y-6">
           {/* Brand Header */}
           <div className="flex items-center gap-3 px-2">
@@ -366,9 +366,9 @@ export default function App() {
       </aside>
 
       {/* Main Content Area (Mobile column on small screens, full wide dashboard on desktop) */}
-      <div className="flex-1 flex flex-col w-full max-w-md md:max-w-6xl mx-auto relative pb-24 md:pb-10">
+      <div className="flex-1 flex flex-col w-full max-w-md md:max-w-6xl mx-auto relative h-dvh overflow-hidden">
         {/* Top Header */}
-        <header className="safe-top sticky top-0 z-20 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md px-4 md:px-8 pb-2.5 md:pb-4 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
+        <header className="safe-top shrink-0 z-20 bg-[#F2F2F7] dark:bg-black px-4 md:px-8 pb-2.5 md:pb-4 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             {activeTab === 'home' && 'Inicio'}
             {activeTab === 'analytics' && 'Analíticas'}
@@ -401,7 +401,7 @@ export default function App() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-4 md:px-8 pt-3 md:pt-6 space-y-4">
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-3 md:pt-6 pb-28 md:pb-10 space-y-4">
         {activeTab === 'home' && (
           <HomeTab
             expenses={expenses}
