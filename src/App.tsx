@@ -294,40 +294,113 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-gray-100 flex flex-col max-w-md mx-auto relative pb-24">
-      {/* Top Header */}
-      <header className="safe-top sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md px-4 pt-3 pb-2 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {activeTab === 'home' && 'Inicio'}
-          {activeTab === 'analytics' && 'Analíticas'}
-          {activeTab === 'transactions' && 'Transacciones'}
-          {activeTab === 'accounts' && 'Cuentas'}
-          {activeTab === 'settings' && 'Ajustes'}
-        </h1>
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-gray-100 flex flex-col md:flex-row">
+      {/* Desktop Sidebar (visible on md and larger screens) */}
+      <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col justify-between bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-r border-gray-200/80 dark:border-zinc-800 p-5 sticky top-0 h-screen">
+        <div className="space-y-6">
+          {/* Brand Header */}
+          <div className="flex items-center gap-3 px-2">
+            <img src="./icon.svg" alt="Inpenso" className="w-10 h-10 rounded-xl shadow-sm" />
+            <div>
+              <h1 className="text-lg font-bold tracking-tight leading-tight">Inpenso</h1>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Finanzas personales</p>
+            </div>
+          </div>
 
-        {(activeTab === 'home' || activeTab === 'transactions') && (
+          {/* Primary Action Button */}
           <button
             onClick={openAddTransaction}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-3.5 py-1.5 rounded-full shadow-sm transition"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold py-2.5 px-4 rounded-xl shadow-sm transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Agregar</span>
+            <span>Nueva transacción</span>
           </button>
-        )}
 
-        {activeTab === 'accounts' && (
-          <button
-            onClick={openNewAccount}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-3.5 py-1.5 rounded-full shadow-sm transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nueva</span>
-          </button>
-        )}
-      </header>
+          {/* Desktop Navigation Links */}
+          <nav className="space-y-1">
+            <SidebarButton
+              active={activeTab === 'home'}
+              onClick={() => setActiveTab('home')}
+              icon={<Home className="w-5 h-5" />}
+              label="Inicio"
+            />
+            <SidebarButton
+              active={activeTab === 'analytics'}
+              onClick={() => setActiveTab('analytics')}
+              icon={<PieChart className="w-5 h-5" />}
+              label="Analíticas"
+            />
+            <SidebarButton
+              active={activeTab === 'transactions'}
+              onClick={() => setActiveTab('transactions')}
+              icon={<List className="w-5 h-5" />}
+              label="Transacciones"
+            />
+            <SidebarButton
+              active={activeTab === 'accounts'}
+              onClick={() => setActiveTab('accounts')}
+              icon={<CreditCard className="w-5 h-5" />}
+              label="Cuentas"
+            />
+            <SidebarButton
+              active={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+              icon={<Settings className="w-5 h-5" />}
+              label="Ajustes"
+            />
+          </nav>
+        </div>
 
-      {/* Main Content */}
-      <main className="flex-1 px-4 pt-3 space-y-4">
+        {/* Desktop Sidebar Footer Summary */}
+        <div className="bg-gray-50 dark:bg-zinc-800/70 rounded-2xl p-3.5 space-y-1.5 text-xs">
+          <p className="text-gray-500 dark:text-zinc-400 font-medium">Gasto del mes actual</p>
+          <p className="text-lg font-bold">{fmt(totalSpent)}</p>
+          {currentBudget > 0 && (
+            <p className="text-[11px] text-gray-500 dark:text-zinc-400">
+              {Math.min(100, Math.round((totalSpent / currentBudget) * 100))}% del presupuesto (
+              {fmt(currentBudget)})
+            </p>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Area (Mobile column on small screens, full wide dashboard on desktop) */}
+      <div className="flex-1 flex flex-col w-full max-w-md md:max-w-6xl mx-auto relative pb-24 md:pb-10">
+        {/* Top Header */}
+        <header className="safe-top sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md px-4 md:px-8 pt-3 md:pt-6 pb-2 md:pb-4 flex items-center justify-between border-b border-gray-200/60 dark:border-zinc-800/70">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            {activeTab === 'home' && 'Inicio'}
+            {activeTab === 'analytics' && 'Analíticas'}
+            {activeTab === 'transactions' && 'Transacciones'}
+            {activeTab === 'accounts' && 'Cuentas'}
+            {activeTab === 'settings' && 'Ajustes'}
+          </h1>
+
+          <div className="flex items-center gap-2">
+            {(activeTab === 'home' || activeTab === 'transactions') && (
+              <button
+                onClick={openAddTransaction}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-3.5 py-1.5 rounded-full shadow-sm transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Agregar</span>
+              </button>
+            )}
+
+            {activeTab === 'accounts' && (
+              <button
+                onClick={openNewAccount}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-3.5 py-1.5 rounded-full shadow-sm transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nueva cuenta</span>
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 px-4 md:px-8 pt-3 md:pt-6 space-y-4">
         {activeTab === 'home' && (
           <HomeTab
             expenses={expenses}
@@ -434,41 +507,42 @@ export default function App() {
         </button>
       )}
 
-      {/* iOS Bottom Tab Bar */}
-      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl border-t border-gray-200/80 dark:border-zinc-800">
-        <div className="max-w-md mx-auto grid grid-cols-5 pt-1.5 pb-1">
-          <TabButton
-            active={activeTab === 'home'}
-            onClick={() => setActiveTab('home')}
-            icon={<Home className="w-5 h-5" />}
-            label="Inicio"
-          />
-          <TabButton
-            active={activeTab === 'analytics'}
-            onClick={() => setActiveTab('analytics')}
-            icon={<PieChart className="w-5 h-5" />}
-            label="Analíticas"
-          />
-          <TabButton
-            active={activeTab === 'transactions'}
-            onClick={() => setActiveTab('transactions')}
-            icon={<List className="w-5 h-5" />}
-            label="Gastos"
-          />
-          <TabButton
-            active={activeTab === 'accounts'}
-            onClick={() => setActiveTab('accounts')}
-            icon={<CreditCard className="w-5 h-5" />}
-            label="Cuentas"
-          />
-          <TabButton
-            active={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
-            icon={<Settings className="w-5 h-5" />}
-            label="Ajustes"
-          />
-        </div>
-      </nav>
+        {/* iOS Bottom Tab Bar (hidden on desktop md+) */}
+        <nav className="md:hidden safe-bottom fixed bottom-0 left-0 right-0 z-20 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl border-t border-gray-200/80 dark:border-zinc-800">
+          <div className="max-w-md mx-auto grid grid-cols-5 pt-1.5 pb-1">
+            <TabButton
+              active={activeTab === 'home'}
+              onClick={() => setActiveTab('home')}
+              icon={<Home className="w-5 h-5" />}
+              label="Inicio"
+            />
+            <TabButton
+              active={activeTab === 'analytics'}
+              onClick={() => setActiveTab('analytics')}
+              icon={<PieChart className="w-5 h-5" />}
+              label="Analíticas"
+            />
+            <TabButton
+              active={activeTab === 'transactions'}
+              onClick={() => setActiveTab('transactions')}
+              icon={<List className="w-5 h-5" />}
+              label="Gastos"
+            />
+            <TabButton
+              active={activeTab === 'accounts'}
+              onClick={() => setActiveTab('accounts')}
+              icon={<CreditCard className="w-5 h-5" />}
+              label="Cuentas"
+            />
+            <TabButton
+              active={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+              icon={<Settings className="w-5 h-5" />}
+              label="Ajustes"
+            />
+          </div>
+        </nav>
+      </div>
 
       {/* Transaction Add / Edit Modal */}
       {txModalOpen && (
@@ -530,6 +604,32 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+function SidebarButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+        active
+          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+          : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800/60'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -628,7 +728,8 @@ function HomeTab({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <div className="space-y-4">
       {/* Monthly Cashflow Header Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
@@ -726,6 +827,9 @@ function HomeTab({
         </div>
       </div>
 
+      </div>
+
+      <div className="space-y-4">
       {/* Category Breakdown */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm space-y-3">
         <h2 className="text-sm font-semibold">Gasto por categoría</h2>
@@ -836,6 +940,7 @@ function HomeTab({
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -1151,7 +1256,7 @@ function AnalyticsTabView({
       {/* Sub-tab 1: Overview */}
       {analyticsTab === 'overview' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <MetricCard title="Gasto total" value={fmt(totalSpent)} color="text-blue-600" />
             <MetricCard title="Ingresos" value={fmt(totalIncome)} color="text-emerald-600" />
             <MetricCard
@@ -1237,7 +1342,7 @@ function AnalyticsTabView({
 
       {/* Sub-tab 3: Smart Insights */}
       {analyticsTab === 'insights' && (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           {/* Key Statistics */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm space-y-3">
             <h3 className="text-sm font-semibold">Estadísticas clave</h3>
@@ -1590,7 +1695,7 @@ function AccountsTab({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       {accounts.map((account) => {
         const isCredit = account.type === 'credit';
         const consumed = getAccountConsumed(account, expenses);
@@ -1789,7 +1894,7 @@ function SettingsTab({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       {/* Appearance */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
