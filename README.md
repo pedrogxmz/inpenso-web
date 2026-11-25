@@ -73,6 +73,12 @@ npm run deploy
 
 ---
 
+## 🤝 Cómo contribuir
+
+Las contribuciones son bienvenidas. Seguimos **GitHub Flow** con ramas `feat/*` y `fix/*` validadas por GitHub Actions antes de integrarse a `main`. Consulta la **[Guía de Contribución (CONTRIBUTING.md)](./CONTRIBUTING.md)** para ver las instrucciones paso a paso.
+
+---
+
 ## 🙏 Créditos
 
 - Proyecto iOS original: **[VintusS/Inpenso](https://github.com/VintusS/Inpenso)** por [Dragomir Mindrescu (@VintusS)](https://github.com/VintusS).
