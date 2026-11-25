@@ -1,0 +1,19 @@
+{
+  "name": "Inpenso — Finanzas Personales",
+  "short_name": "Inpenso",
+  "description": "Control de gastos, presupuesto mensual, cuentas de crédito/débito y asistente financiero.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F2F7",
+  "theme_color": "#007AFF",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
